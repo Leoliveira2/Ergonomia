@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>RULA - Avaliação Ergonômica</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    h1 { color: #1c5d99; }
+    .section { margin-bottom: 20px; }
+    label { display: block; margin: 5px 0; }
+    select { width: 100%; padding: 5px; margin-bottom: 10px; }
+    button { padding: 10px 20px; background: #1c5d99; color: white; border: none; cursor: pointer; }
+    .result { background: white; padding: 10px; border: 1px solid #ccc; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>RULA - Avaliação Ergonômica</h1>
+
+  <div class="section">
+    <label for="braco">Braço superior (1-6):</label>
+    <select id="braco">
+      <option value="1">1 - Relaxado</option>
+      <option value="2">2 - Leve flexão</option>
+      <option value="3">3 - 45°</option>
+      <option value="4">4 - 90°</option>
+      <option value="5">5 - acima de 90°</option>
+      <option value="6">6 - muito elevado</option>
+    </select>
+
+    <label for="antebraco">Antebraço (1-3):</label>
+    <select id="antebraco">
+      <option value="1">1 - 60° a 100°</option>
+      <option value="2">2 - fora dessa faixa</option>
+      <option value="3">3 - posição extrema</option>
+    </select>
+
+    <label for="punho">Punho (1-4):</label>
+    <select id="punho">
+      <option value="1">1 - neutro</option>
+      <option value="2">2 - levemente desviado</option>
+      <option value="3">3 - bastante desviado</option>
+      <option value="4">4 - desvio extremo</option>
+    </select>
+
+    <label for="carga">Carga ou força?</label>
+    <select id="carga">
+      <option value="0">0 - sem carga</option>
+      <option value="1">1 - até 2kg</option>
+      <option value="2">2 - acima de 2kg</option>
+    </select>
+
+    <button onclick="calcularRULA()">Calcular Score RULA</button>
+  </div>
+
+  <div class="result" id="resultado"></div>
+
+  <script>
+    function calcularRULA() {
+      const braco = parseInt(document.getElementById("braco").value);
+      const antebraco = parseInt(document.getElementById("antebraco").value);
+      const punho = parseInt(document.getElementById("punho").value);
+      const carga = parseInt(document.getElementById("carga").value);
+
+      let score = braco + antebraco + punho + carga;
+
+      let risco = "";
+      if (score <= 4) risco = "Risco baixo – pode não exigir ação";
+      else if (score <= 6) risco = "Risco médio – investigar e considerar mudanças";
+      else risco = "Risco alto – ação imediata recomendada";
+
+      document.getElementById("resultado").innerHTML = `
+        <h2>Resultado</h2>
+        <p><strong>Score:</strong> ${score}</p>
+        <p><strong>Recomendação:</strong> ${risco}</p>
+      `;
+    }
+  </script>
+</body>
+</html>
+...
