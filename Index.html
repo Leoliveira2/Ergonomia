@@ -1,80 +1,144 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <title>RULA - Avaliação Ergonômica</title>
+  <meta charset="UTF-8">
+  <title>ErgoMap - Avaliação Ergonômica</title>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
-    h1 { color: #1c5d99; }
-    .section { margin-bottom: 20px; }
-    label { display: block; margin: 5px 0; }
-    select { width: 100%; padding: 5px; margin-bottom: 10px; }
-    button { padding: 10px 20px; background: #1c5d99; color: white; border: none; cursor: pointer; }
-    .result { background: white; padding: 10px; border: 1px solid #ccc; margin-top: 20px; }
+    body { font-family: Arial; padding: 20px; background: #f4f4f4; }
+    h1 { color: #004080; }
+    .section { background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    label { display: block; margin-top: 10px; }
+    select, button { width: 100%; padding: 8px; margin-top: 5px; }
+    .result { margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #ccc; border-radius: 6px; }
+    video, canvas { display: none; }
   </style>
 </head>
 <body>
-  <h1>RULA - Avaliação Ergonômica</h1>
 
-  <div class="section">
-    <label for="braco">Braço superior (1-6):</label>
-    <select id="braco">
-      <option value="1">1 - Relaxado</option>
-      <option value="2">2 - Leve flexão</option>
-      <option value="3">3 - 45°</option>
-      <option value="4">4 - 90°</option>
-      <option value="5">5 - acima de 90°</option>
-      <option value="6">6 - muito elevado</option>
-    </select>
+<h1>ErgoMap - Avaliação Ergonômica</h1>
 
-    <label for="antebraco">Antebraço (1-3):</label>
-    <select id="antebraco">
-      <option value="1">1 - 60° a 100°</option>
-      <option value="2">2 - fora dessa faixa</option>
-      <option value="3">3 - posição extrema</option>
-    </select>
+<div class="section">
+  <label for="metodo">Escolha a metodologia:</label>
+  <select id="metodo" onchange="mostrarFormulario()">
+    <option value="">-- Selecione --</option>
+    <option value="rula">RULA</option>
+    <option value="reba">REBA</option>
+    <option value="owas">OWAS</option>
+  </select>
+</div>
 
-    <label for="punho">Punho (1-4):</label>
-    <select id="punho">
-      <option value="1">1 - neutro</option>
-      <option value="2">2 - levemente desviado</option>
-      <option value="3">3 - bastante desviado</option>
-      <option value="4">4 - desvio extremo</option>
-    </select>
+<div id="formulario"></div>
+<div class="result" id="resultado"></div>
+<div class="section">
+  <h3>Histórico de Avaliações</h3>
+  <div id="historico"></div>
+</div>
 
-    <label for="carga">Carga ou força?</label>
-    <select id="carga">
-      <option value="0">0 - sem carga</option>
-      <option value="1">1 - até 2kg</option>
-      <option value="2">2 - acima de 2kg</option>
-    </select>
+<video id="video" autoplay muted></video>
+<canvas id="canvas"></canvas>
 
-    <button onclick="calcularRULA()">Calcular Score RULA</button>
-  </div>
+<script>
+function mostrarFormulario() {
+  const metodo = document.getElementById("metodo").value;
+  let html = '';
 
-  <div class="result" id="resultado"></div>
+  if (metodo === "rula") {
+    html = \`
+      <div class="section">
+        <h3>RULA - Avaliação</h3>
+        <label>Braço superior:</label><select id="braco"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
+        <label>Antebraço:</label><select id="antebraco"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+        <label>Punho:</label><select id="punho"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+        <label>Pescoço:</label><select id="pescoco"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+        <label>Tronco:</label><select id="tronco"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
+        <label>Pernas:</label><select id="pernas"><option value="1">1</option><option value="2">2</option></select>
+        <label>Carga:</label><select id="carga"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+        <button onclick="calcularRULA()">Calcular RULA</button>
+      </div>
+    \`;
+  }
 
-  <script>
-    function calcularRULA() {
-      const braco = parseInt(document.getElementById("braco").value);
-      const antebraco = parseInt(document.getElementById("antebraco").value);
-      const punho = parseInt(document.getElementById("punho").value);
-      const carga = parseInt(document.getElementById("carga").value);
+  if (metodo === "reba") {
+    html = \`
+      <div class="section">
+        <h3>REBA - Avaliação</h3>
+        <label>Tronco:</label><select id="rebaTronco"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select>
+        <label>Pernas:</label><select id="rebaPernas"><option value="1">1</option><option value="2">2</option></select>
+        <label>Pescoço:</label><select id="rebaPescoco"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+        <label>Carga:</label><select id="rebaCarga"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+        <button onclick="calcularREBA()">Calcular REBA</button>
+      </div>
+    \`;
+  }
 
-      let score = braco + antebraco + punho + carga;
+  if (metodo === "owas") {
+    html = \`
+      <div class="section">
+        <h3>OWAS - Avaliação</h3>
+        <label>Costas:</label><select id="owasCostas"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+        <label>Pernas:</label><select id="owasPernas"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+        <label>Braços:</label><select id="owasBracos"><option value="1">1</option><option value="2">2</option></select>
+        <label>Peso:</label><select id="owasPeso"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>
+        <button onclick="calcularOWAS()">Calcular OWAS</button>
+      </div>
+    \`;
+  }
 
-      let risco = "";
-      if (score <= 4) risco = "Risco baixo – pode não exigir ação";
-      else if (score <= 6) risco = "Risco médio – investigar e considerar mudanças";
-      else risco = "Risco alto – ação imediata recomendada";
+  document.getElementById("formulario").innerHTML = html;
+  document.getElementById("resultado").innerHTML = "";
+}
 
-      document.getElementById("resultado").innerHTML = `
-        <h2>Resultado</h2>
-        <p><strong>Score:</strong> ${score}</p>
-        <p><strong>Recomendação:</strong> ${risco}</p>
-      `;
-    }
-  </script>
+function salvarAvaliacao(metodo, score, texto) {
+  const avaliacoes = JSON.parse(localStorage.getItem("avaliacoesErgo")) || [];
+  const data = new Date().toLocaleString("pt-BR");
+  avaliacoes.push({ data, metodo, score, texto });
+  localStorage.setItem("avaliacoesErgo", JSON.stringify(avaliacoes));
+  exibirHistorico();
+}
+
+function exibirHistorico() {
+  const avaliacoes = JSON.parse(localStorage.getItem("avaliacoesErgo")) || [];
+  if (avaliacoes.length === 0) {
+    document.getElementById("historico").innerHTML = "<p>Nenhuma avaliação salva ainda.</p>";
+    return;
+  }
+
+  let html = "<table border='1' cellpadding='5'><tr><th>Data</th><th>Método</th><th>Score</th><th>Recomendação</th></tr>";
+  for (const a of avaliacoes.reverse()) {
+    html += `<tr><td>${a.data}</td><td>${a.metodo.toUpperCase()}</td><td>${a.score}</td><td>${a.texto}</td></tr>`;
+  }
+  html += "</table>";
+  document.getElementById("historico").innerHTML = html;
+}
+
+function calcularRULA() {
+  const a = +document.getElementById("braco").value + +document.getElementById("antebraco").value + +document.getElementById("punho").value;
+  const b = +document.getElementById("pescoco").value + +document.getElementById("tronco").value + +document.getElementById("pernas").value;
+  const carga = +document.getElementById("carga").value;
+  const score = Math.round((a * 0.6 + b * 0.4 + carga));
+  const texto = (score <= 3) ? "Nível 1 - Postura aceitável" :
+                (score === 4) ? "Nível 2 - Reavaliar" :
+                (score <= 6) ? "Nível 3 - Mudança necessária" : "Nível 4 - Mudança imediata";
+  document.getElementById("resultado").innerHTML = `<h3>RULA Score: ${score}</h3><p>${texto}</p><button onclick="salvarAvaliacao('rula', ${score}, '${texto}')">Salvar Avaliação</button>`;
+}
+
+function calcularREBA() {
+  const score = +document.getElementById("rebaTronco").value + +document.getElementById("rebaPernas").value + +document.getElementById("rebaPescoco").value + +document.getElementById("rebaCarga").value;
+  const texto = (score <= 3) ? "Risco Baixo" : (score <= 7) ? "Risco Médio" : (score <= 10) ? "Alto Risco" : "Risco Muito Alto";
+  document.getElementById("resultado").innerHTML = `<h3>REBA Score: ${score}</h3><p>${texto}</p><button onclick="salvarAvaliacao('reba', ${score}, '${texto}')">Salvar Avaliação</button>`;
+}
+
+function calcularOWAS() {
+  const score = +document.getElementById("owasCostas").value + +document.getElementById("owasPernas").value + +document.getElementById("owasBracos").value + +document.getElementById("owasPeso").value;
+  const texto = (score <= 5) ? "Ação não necessária" : (score <= 7) ? "Ação futura necessária" : (score <= 9) ? "Ação breve necessária" : "Ação imediata necessária";
+  document.getElementById("resultado").innerHTML = `<h3>OWAS Score: ${score}</h3><p>${texto}</p><button onclick="salvarAvaliacao('owas', ${score}, '${texto}')">Salvar Avaliação</button>`;
+}
+
+window.onload = exibirHistorico;
+</script>
 </body>
 </html>
-...
